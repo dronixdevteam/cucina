@@ -1,0 +1,37 @@
+#!/bin/bash
+
+DIALOG=${DIALOG=dialog}
+TITLE="DroniX Dev Team's \"cucina\""
+MESSAGE0="What do you wanna do?"
+
+CHOICE01="splash"
+MESSAGE1="Create splash.img"
+
+CHOICE02="logo"
+MESSAGE2="Create logo.rle"
+
+# WELCOME MENU
+tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
+trap "rm -f $tempfile" 0 1 2 5 15
+
+$DIALOG --clear --title "$TITLE" \
+    --menu "$MESSAGE0" 15 60 3 \
+    "$CHOICE01" "$MESSAGE1" \
+    "$CHOICE02" "$MESSAGE2" 2> $tempfile
+
+retval=$?
+
+choice=`cat $tempfile`
+
+case $retval in
+    0)
+	if [ $choice = "splash" ]; then
+	    ./scripts/splash01
+	elif [ $choice = "logo" ]; then
+	    ./scripts/logo01
+        fi;;
+    1)
+	echo "Cancel pressed.";;
+    255)
+	echo "ESC pressed.";;
+esac
