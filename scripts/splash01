@@ -1,0 +1,44 @@
+#!/bin/bash
+
+DIALOG=${DIALOG=dialog}
+TITLE="Welcome to splash.img creation"
+MESSAGE0="Be sure your splash.png file is in images
+folder and press OK."
+
+TITLE2="splash.img successfully created"
+MESSAGE2="Nice job!\nNow you can flash your new splash.img to you phone with:\n\n# fastboot flash splash splash.img"
+
+tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
+trap "rm -f $tempfile" 0 1 2 5 15
+
+$DIALOG --clear --title "$TITLE" \
+--msgbox "$MESSAGE0" 6 50 2> $tempfile
+
+retval=$?
+
+choice=`cat $tempfile`
+
+case $retval in
+    0)
+	pwd
+	if [ -e ./images/splash.png ]; then
+	    cd ./images
+	    convert -depth 8 splash.png rgb:splash.raw
+	    ../bin/to565 < splash.raw > splash.img
+	    if [ -e splash.img ]; then
+		rm splash.raw
+		$DIALOG --clear --title "$TITLE2" \
+		    --msgbox "$MESSAGE2" 10 50
+	    else
+		exit 1
+	    fi
+	else
+	    echo "Cannot find splash.png in images folder"
+	    echo 
+	fi
+	;;
+    1)
+	echo "Cancel pressed.";;
+    255)
+	echo "ESC pressed.";;
+esac

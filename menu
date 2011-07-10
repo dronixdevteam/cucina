@@ -25,9 +25,9 @@ choice=`cat $tempfile`
 
 case $retval in
     0)
-	if [ $choice = "splash" ]; then
+	if [ $choice = "$CHOICE01" ]; then
 	    ./scripts/splash01
-	elif [ $choice = "logo" ]; then
+	elif [ $choice = "$CHOICE02" ]; then
 	    ./scripts/logo01
         fi;;
     1)
