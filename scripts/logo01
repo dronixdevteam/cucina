@@ -1,44 +1,66 @@
 #!/bin/bash
 
-DIALOG=${DIALOG=dialog}
-TITLE="Welcome to logo.rle creation"
-MESSAGE0="Be sure your logo.png file is in images
-folder and press OK."
+showWelcome () {
+    TITLE="Welcome to logo.rle creation"
+    MESSAGE0="Be sure your logo.png file is in images folder and press OK."
 
-TITLE2="logo.rle successfully created"
-MESSAGE2="Nice job!\nNow you can add your new logo.rle to your boot.img"
+    clear
+    echo $TITLE
+    echo $MESSAGE0
+    echo
+}
 
-tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
-trap "rm -f $tempfile" 0 1 2 5 15
+showSuccess () {
+    MESSAGE1="Nice job!"
+    MESSAGE2=".rle image has been created. Please be sure your file is named logo.rle nor logo.png.rle"
+    MESSAGE3="If you converted more than one image, rename one to logo.rle and add it to your boot.img"
 
-$DIALOG --clear --title "$TITLE" \
---msgbox "$MESSAGE0" 6 50 2> $tempfile
+    echo ""
+    echo $MESSAGE1
+    echo $MESSAGE2
+    echo $MESSAGE3
+    echo ""
+}
 
-retval=$?
+showWelcome
+if [ -e ./images ]; then
+    cd ./images
+    # check if ImageMagick is installed and then convert
+    if [ -e /usr/bin/convert ]; then
+	for i in *.png
+	do
+	    # I know progress bar is a fake. Don't bother me!
+	    echo -n "####"
+	    convert -depth 8 $i rgb:$i.raw
+	    echo "##########"
+	    ../bin/to565 -rle < $i.raw > $i.rle
+	    echo "############[100%]"
+	done
+	for i in *.jpg
+	do
+	    echo -n "####"
+	    convert -depth 8 $i rgb:$i.raw
+	    echo "##########"
+	    ../bin/to565 -rle < $i.raw > $i.rle
+	    echo "############[100%]"
+	done 
+	
+    else
+	echo "Please install ImageMagick"
+	exit 
+    fi
 
-choice=`cat $tempfile`
-
-case $retval in
-    0)
-	pwd
-	if [ -e ./images/logo.png ]; then
-	    cd ./images
-	    convert -depth 8 logo.png rgb:logo.raw
-	    ../bin/to565 -rle < logo.raw > logo.rle
-	    if [ -e logo.rle ]; then
-		rm logo.raw	       
-	    	$DIALOG --clear --title "$TITLE2" \
-		    --msgbox "$MESSAGE2" 8 50
-	    else
-		exit 1
-	    fi
-	else
-	    echo "Cannot find logo.png in images folder"
-	    echo 
-	fi
-	;;
-    1)
-	echo "Cancel pressed.";;
-    255)
-	echo "ESC pressed.";;
-esac
+    echo "Created:"
+    ls -l *.rle 2> /dev/null
+    CHECK=`echo $?`
+    if [ CHECK="0" ]; then
+	rm *.raw
+	showSuccess
+    else
+	exit 1
+    fi
+else
+    mkdir images
+    echo "Please put some image in 'images' folder"
+    echo 
+fi

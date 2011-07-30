@@ -1,37 +1,36 @@
 #!/bin/bash
 
-DIALOG=${DIALOG=dialog}
-TITLE="DroniX Dev Team's \"cucina\""
-MESSAGE0="What do you wanna do?"
+showTitle () {
+    TITLE="DroniX Dev Team's \"cucina\""
+    MESSAGE0="What do you wanna do?"
 
-CHOICE01="splash"
-MESSAGE1="Create splash.img"
+    clear
+    echo $TITLE
+    echo $MESSAGE0
+    echo ""
+}
 
-CHOICE02="logo"
-MESSAGE2="Create logo.rle"
+showMenu () {
+    
+    CHOICE01="Create splash.img"
+    CHOICE02="Create logo.rle"
 
-# WELCOME MENU
-tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
-trap "rm -f $tempfile" 0 1 2 5 15
+    echo "1) $CHOICE01"
+    echo "2) $CHOICE02"
+    echo "666) quit"
+}
 
-$DIALOG --clear --title "$TITLE" \
-    --menu "$MESSAGE0" 15 60 3 \
-    "$CHOICE01" "$MESSAGE1" \
-    "$CHOICE02" "$MESSAGE2" 2> $tempfile
-
-retval=$?
-
-choice=`cat $tempfile`
-
-case $retval in
-    0)
-	if [ $choice = "$CHOICE01" ]; then
-	    ./scripts/splash01
-	elif [ $choice = "$CHOICE02" ]; then
-	    ./scripts/logo01
-        fi;;
-    1)
-	echo "Cancel pressed.";;
-    255)
-	echo "ESC pressed.";;
+showTitle
+showMenu
+read CHOICE
+case "$CHOICE" in
+    "1")
+	./scripts/splash01
+        ;;
+    "2")
+	./scripts/logo01
+        ;;
+    "666")
+        exit
+        ;;
 esac

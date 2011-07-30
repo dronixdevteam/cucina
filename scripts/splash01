@@ -1,44 +1,66 @@
 #!/bin/bash
 
-DIALOG=${DIALOG=dialog}
-TITLE="Welcome to splash.img creation"
-MESSAGE0="Be sure your splash.png file is in images
-folder and press OK."
+showWelcome () {
+    TITLE="Welcome to splash.img creation"
+    MESSAGE0="Be sure your .png or .jpg file is in 'images' folder and press Enter."
 
-TITLE2="splash.img successfully created"
-MESSAGE2="Nice job!\nNow you can flash your new splash.img to you phone with:\n\n# fastboot flash splash splash.img"
+    clear
+    echo $TITLE
+    echo $MESSAGE0
+    read
+}
 
-tempfile=`tempfile 2>/dev/null` || tempfile=/tmp/test$$
-trap "rm -f $tempfile" 0 1 2 5 15
+showSuccess () {
+    MESSAGE1="Nice job!"
+    MESSAGE2="Now you can flash your new splash.img to you phone with:"
+    MESSAGE3="# fastboot flash splash splash.img"
 
-$DIALOG --clear --title "$TITLE" \
---msgbox "$MESSAGE0" 6 50 2> $tempfile
+    echo ""
+    echo $MESSAGE1
+    echo $MESSAGE2
+    echo $MESSAGE3
+    echo ""
+}
 
-retval=$?
+showWelcome
+if [ -e ./images ]; then
+    cd ./images
+    # check if ImageMagick is installed and then convert
+    if [ -e /usr/bin/convert ]; then
+	for i in *.png
+	do
+	    # I know progress bar is a fake. Don't bother me!
+	    echo -n "####"
+	    convert -depth 8 $i rgb:$i.raw
+	    echo -n "##########"
+	    ../bin/to565 < $i.raw > $i.img
+	    echo "##[100%]"
+	done
+	for i in *.jpg
+	do
+	    echo -n "####"
+	    convert -depth 8 $i rgb:$i.raw
+	    echo -n "##########"
+	    ../bin/to565 < $i.raw > $i.img
+	    echo "##[100%]"
+	done 
+	
+    else
+	echo "Please install ImageMagick"
+	exit 
+    fi
 
-choice=`cat $tempfile`
-
-case $retval in
-    0)
-	pwd
-	if [ -e ./images/splash.png ]; then
-	    cd ./images
-	    convert -depth 8 splash.png rgb:splash.raw
-	    ../bin/to565 < splash.raw > splash.img
-	    if [ -e splash.img ]; then
-		rm splash.raw
-		$DIALOG --clear --title "$TITLE2" \
-		    --msgbox "$MESSAGE2" 10 50
-	    else
-		exit 1
-	    fi
-	else
-	    echo "Cannot find splash.png in images folder"
-	    echo 
-	fi
-	;;
-    1)
-	echo "Cancel pressed.";;
-    255)
-	echo "ESC pressed.";;
-esac
+    echo "Created:"
+    ls -l *.img 2> /dev/null
+    CHECK=`echo $?`
+    if [ CHECK="0" ]; then
+	rm *.raw
+	showSuccess
+    else
+	exit 1
+    fi
+else
+    mkdir images
+    echo "Please put some image in 'images' folder"
+    echo 
+fi
